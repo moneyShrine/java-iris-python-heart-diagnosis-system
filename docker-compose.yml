@@ -1,0 +1,39 @@
+services:
+  iris-db:
+    image: intersystems/iris-community:latest-cd
+    container_name: iris-db
+    ports:
+      - "1972:1972"
+      - "52773:52773"
+    environment:
+      - IRIS_USERNAME=SuperUser
+      - IRIS_PASSWORD=SYS
+      - IRIS_NAMESPACE=HEALTH_NS
+      - ISC_DATA_DIRECTORY=/usr/irissys/data
+      - TZ=Africa/Lagos
+    volumes:
+      - iris-data:/usr/irissys/data
+
+  python-model:
+    build: ./python-model
+    container_name: python-model
+    ports:
+      - "5000:5000"
+
+  spring-backend:
+    build: ./heart_diagnosis
+    container_name: spring-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - iris-db
+      - python-model
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:IRIS://iris-db:1972/HEALTH_NS
+      SPRING_DATASOURCE_USERNAME: SuperUser
+      SPRING_DATASOURCE_PASSWORD: Joe+God=2much
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      PYTHON_SERVICE_URL: http://python-model:5000/predict
+
+volumes:
+  iris-data:
